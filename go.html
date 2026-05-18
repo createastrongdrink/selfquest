@@ -1,0 +1,1682 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#003049">
+<title>GrowthBank | Master OS</title>
+<link rel="manifest" href="manifest.json">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+<style>
+:root {
+--barn-red: #780000;
+--fire-red: #c1121f;
+--cream: #fdf0d5;
+--dark-blue: #003049;
+--light-blue: #669bbc;
+--status-started: #4895ef;
+--status-finished: #2d6a4f;
+--status-annotated: #ff4d6d;
+--bg-color: #fdf0d5;
+--text-color: #780000;
+--card-bg: white;
+--input-bg: #fbfbfb;
+}
+
+body.dark-theme {
+--bg-color: #1a1a1a;
+--text-color: #fdf0d5;
+--card-bg: #2d2d2d;
+--input-bg: #3d3d3d;
+}
+
+.streak-fire { color: #ff4d6d; font-weight: 900; font-size: 0.8rem; }
+.progress-container { background: rgba(0,0,0,0.1); border-radius: 10px; height: 8px; width: 100%; margin-top: 10px; }
+.progress-bar { background: var(--fire-red); height: 100%; border-radius: 10px; transition: width 0.5s ease; }
+.hidden-file-input { display: none; }
+.import-label { cursor: pointer; font-size: 0.7rem; opacity: 0.6; border: 1px solid var(--cream); padding: 8px; border-radius: 5px; text-align: center; margin-top: 5px; display: block; }
+
+* { box-sizing: border-box; transition: all 0.2s ease; }
+body { margin: 0; display: flex; font-family: 'Inter', sans-serif; background-color: var(--barn-red); height: 100vh; overflow: hidden; }
+
+aside { width: 280px; background-color: var(--dark-blue); color: var(--cream); display: flex; flex-direction: column; padding: 2.5rem; border-right: 4px solid var(--fire-red); }
+.logo { font-weight: 900; font-size: 1.6rem; color: var(--fire-red); margin-bottom: 3rem; cursor: pointer; text-transform: uppercase; letter-spacing: 2px; }
+nav ul { list-style: none; padding: 0; }
+nav li { padding: 15px 12px; cursor: pointer; display: flex; align-items: center; gap: 15px; border-radius: 10px; margin-bottom: 8px; font-weight: 600; font-size: 0.95rem; }
+nav li:hover, nav li.active { background: var(--fire-red); color: white; }
+
+main { flex-grow: 1; background-color: var(--bg-color); margin: 15px; border-radius: 30px; padding: 2.5rem; overflow-y: auto; position: relative; box-shadow: inset 0 0 50px rgba(0,0,0,0.15); }
+.view { display: none; animation: slideIn 0.4s ease forwards; }
+.view.active { display: block; }
+
+@keyframes slideIn { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
+
+h1 { color: var(--text-color); text-transform: uppercase; margin: 0 0 30px 0; border-left: 12px solid var(--fire-red); padding-left: 20px; font-size: 2.8rem; letter-spacing: -1px; }
+
+.dash-toolbar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 20px; }
+.quick-actions { display: flex; flex-wrap: wrap; gap: 8px; flex: 1; }
+.quick-btn { background: var(--card-bg); color: var(--text-color); border: 1px solid rgba(0,0,0,0.1); padding: 10px 16px; border-radius: 10px; font-size: 0.75rem; font-weight: 700; cursor: pointer; text-transform: uppercase; }
+.quick-btn:hover { border-color: var(--fire-red); color: var(--fire-red); }
+.customize-btn { background: transparent; color: var(--text-color); border: 1px dashed var(--fire-red); padding: 10px 16px; border-radius: 10px; font-size: 0.75rem; cursor: pointer; font-weight: 600; }
+.widget-settings { display: none; background: var(--card-bg); padding: 20px; border-radius: 16px; margin-bottom: 20px; border: 1px solid rgba(0,0,0,0.08); }
+.widget-settings.open { display: block; }
+.widget-settings label { display: inline-flex; align-items: center; gap: 8px; margin: 6px 14px 6px 0; font-size: 0.8rem; cursor: pointer; }
+
+.bento-grid { display: grid; grid-template-columns: repeat(6, 1fr); grid-auto-rows: minmax(180px, auto); gap: 20px; }
+.card { background: var(--card-bg); color: var(--text-color); border-radius: 24px; padding: 1.8rem; border: 1px solid rgba(0,0,0,0.05); box-shadow: 0 10px 25px rgba(0,0,0,0.05); overflow: hidden; display: flex; flex-direction: column; position: relative; }
+.card:hover { transform: translateY(-5px); border-color: var(--fire-red); box-shadow: 0 15px 35px rgba(120,0,0,0.15); }
+body.dark-theme .card { backdrop-filter: blur(10px); background: rgba(45, 45, 45, 0.8); }
+.card.widget-hidden { display: none !important; }
+
+.big { grid-column: span 3; grid-row: span 2; }
+.wide { grid-column: span 3; }
+.span2 { grid-column: span 2; }
+.compact { grid-auto-rows: minmax(140px, auto); }
+.tall { grid-row: span 2; }
+
+.card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 2px solid var(--cream); padding-bottom: 10px; }
+.card-header h3 { margin: 0; font-size: 0.85rem; text-transform: uppercase; color: var(--fire-red); letter-spacing: 1.5px; }
+body.dark-theme .card-header { border-bottom-color: rgba(255,255,255,0.1); }
+
+.data-list { list-style: none; padding: 0; margin: 0; }
+.data-list li { padding: 12px 0; border-bottom: 1px solid rgba(0,0,0,0.05); display: flex; justify-content: space-between; font-size: 0.9rem; align-items: center; }
+.data-list li span.author { font-size: 0.75rem; color: var(--light-blue); display: block; }
+
+.stat-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 10px; }
+.stat-cell { text-align: center; padding: 12px 8px; background: rgba(0,0,0,0.04); border-radius: 12px; }
+.stat-cell .num { font-size: 1.6rem; font-weight: 900; color: var(--fire-red); display: block; }
+.stat-cell .lbl { font-size: 0.65rem; text-transform: uppercase; opacity: 0.7; }
+
+.today-habits-list { list-style: none; padding: 0; margin: 0; max-height: 200px; overflow-y: auto; }
+.today-habits-list li { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid rgba(0,0,0,0.05); font-size: 0.9rem; }
+.today-col-highlight { background: rgba(193, 18, 31, 0.12); border-radius: 4px; }
+
+.focus-input { width: 100%; border: none; background: transparent; color: inherit; font-size: 1.2rem; font-family: inherit; resize: none; min-height: 80px; outline: none; }
+.focus-input::placeholder { opacity: 0.5; }
+
+.activity-list { list-style: none; padding: 0; margin: 0; font-size: 0.8rem; max-height: 160px; overflow-y: auto; }
+.activity-list li { padding: 8px 0; border-bottom: 1px solid rgba(0,0,0,0.05); display: flex; justify-content: space-between; gap: 10px; }
+.activity-list .act-time { opacity: 0.5; font-size: 0.7rem; white-space: nowrap; }
+
+.status-tag { font-size: 0.65rem; padding: 4px 10px; border-radius: 6px; font-weight: 800; text-transform: uppercase; color: white; border: none; }
+.status-notstarted { background: #adb5bd; }
+.status-started { background: var(--status-started); }
+.status-queued { background: var(--dark-blue); }
+.status-finished { background: var(--status-finished); }
+.status-annotated { background: var(--status-annotated); }
+
+.habit-table { width: 100%; border-collapse: collapse; margin-top: 10px; background: transparent; border-radius: 15px; }
+.habit-table th { padding: 12px; font-size: 0.7rem; color: var(--fire-red); text-transform: uppercase; }
+.habit-table td { padding: 10px; border-bottom: 1px solid rgba(0,0,0,0.05); text-align: center; }
+.habit-name { text-align: left; font-weight: 700; color: var(--light-blue); }
+
+.admin-box { background: var(--card-bg); color: var(--text-color); padding: 25px; border-radius: 20px; margin-bottom: 30px; border-bottom: 5px solid var(--fire-red); box-shadow: 0 10px 30px rgba(0,0,0,0.05); }
+.input-row { display: flex; gap: 15px; flex-wrap: wrap; margin-top: 15px; }
+input, select, textarea { padding: 14px; border-radius: 10px; border: 1px solid rgba(0,0,0,0.1); background: var(--input-bg); color: var(--text-color); font-family: inherit; }
+button.primary { background: var(--fire-red); color: white; border: none; padding: 14px 28px; border-radius: 10px; font-weight: bold; cursor: pointer; text-transform: uppercase; }
+button.primary:hover { background: var(--barn-red); transform: scale(1.05); }
+.delete-icon { color: #ddd; cursor: pointer; transition: 0.2s; }
+.delete-icon:hover { color: var(--fire-red); }
+.pin-icon { color: #ccc; cursor: pointer; margin-right: 10px; }
+.pin-icon.pinned { color: var(--fire-red); }
+
+.theme-toggle { margin-top: auto; padding: 15px; cursor: pointer; text-align: center; border-radius: 10px; background: rgba(255,255,255,0.1); margin-bottom: 10px; }
+.export-btn { font-size: 0.7rem; opacity: 0.6; cursor: pointer; background: transparent; border: 1px solid var(--cream); color: var(--cream); padding: 8px; border-radius: 5px; width: 100%; }
+
+@keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
+.stat-animate { animation: pulse 0.4s ease-out; }
+
+.filter-bar { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px; align-items: center; }
+.filter-bar input, .filter-bar select { padding: 10px 14px; font-size: 0.85rem; }
+.tag-chip { display: inline-block; font-size: 0.65rem; padding: 3px 8px; border-radius: 4px; background: var(--light-blue); color: white; margin-right: 4px; }
+.archived-row { opacity: 0.5; }
+.secondary-btn { background: transparent; border: 1px solid var(--fire-red); color: var(--fire-red); padding: 10px 18px; border-radius: 10px; cursor: pointer; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; }
+.secondary-btn:hover { background: var(--fire-red); color: white; }
+.item-notes { font-size: 0.8rem; opacity: 0.75; margin-top: 6px; }
+.mobile-tools { display: none; gap: 8px; align-items: center; }
+.mobile-icon-btn { background: rgba(255,255,255,0.15); border: none; color: var(--cream); padding: 8px 12px; border-radius: 8px; cursor: pointer; font-size: 0.75rem; }
+.search-hint { font-size: 0.65rem; opacity: 0.5; margin-top: auto; padding: 10px; text-align: center; }
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 1000; display: none; align-items: flex-start; justify-content: center; padding-top: 15vh; }
+.modal-overlay.open { display: flex; }
+.modal-box { background: var(--card-bg); color: var(--text-color); width: min(560px, 92vw); border-radius: 20px; padding: 24px; box-shadow: 0 25px 60px rgba(0,0,0,0.3); }
+.modal-box h2 { margin: 0 0 16px; font-size: 1.2rem; color: var(--fire-red); }
+.modal-box input { width: 100%; margin-bottom: 12px; }
+.search-results { max-height: 320px; overflow-y: auto; margin-top: 12px; }
+.search-results li { padding: 12px; border-bottom: 1px solid rgba(0,0,0,0.06); cursor: pointer; list-style: none; }
+.search-results li:hover { background: rgba(193,18,31,0.08); }
+.search-results .sr-type { font-size: 0.65rem; text-transform: uppercase; color: var(--light-blue); }
+.copy-btn { font-size: 0.7rem; padding: 6px 12px; border-radius: 6px; border: 1px solid var(--fire-red); background: transparent; color: var(--fire-red); cursor: pointer; margin-left: 8px; }
+.goal-done { text-decoration: line-through; opacity: 0.6; }
+.priority-high { color: var(--fire-red); font-weight: 800; }
+.priority-low { opacity: 0.6; }
+.kbd { font-size: 0.65rem; padding: 2px 6px; border-radius: 4px; background: rgba(0,0,0,0.15); }
+
+.sidebar-clock { background: rgba(0,0,0,0.2); border-radius: 12px; padding: 14px; margin-bottom: 1.5rem; text-align: center; }
+.sidebar-clock .clock-time { font-size: 1.8rem; font-weight: 900; color: var(--cream); line-height: 1.1; }
+.sidebar-clock .clock-date { font-size: 0.75rem; opacity: 0.85; margin-top: 6px; line-height: 1.4; }
+nav.nav-scroll { flex: 1; overflow-y: auto; margin: 0 -0.5rem; padding: 0 0.5rem; }
+nav.nav-scroll ul { margin: 0; }
+nav.nav-scroll li { padding: 10px 12px; font-size: 0.85rem; margin-bottom: 4px; }
+.calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; margin-top: 15px; }
+.calendar-grid .cal-head { text-align: center; font-size: 0.65rem; font-weight: 800; color: var(--fire-red); text-transform: uppercase; padding: 8px 0; }
+.calendar-day { min-height: 72px; border: 1px solid rgba(0,0,0,0.08); border-radius: 10px; padding: 6px; cursor: pointer; font-size: 0.75rem; background: var(--card-bg); }
+.calendar-day:hover { border-color: var(--fire-red); }
+.calendar-day.today { border-color: var(--fire-red); box-shadow: inset 0 0 0 2px var(--fire-red); }
+.calendar-day.selected { background: rgba(193,18,31,0.12); }
+.calendar-day.other-month { opacity: 0.35; }
+.calendar-day .day-num { font-weight: 800; }
+.cal-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--fire-red); display: inline-block; margin: 2px 1px 0; }
+.pomodoro-ring { font-size: 4rem; font-weight: 900; text-align: center; color: var(--fire-red); margin: 20px 0; font-variant-numeric: tabular-nums; }
+.pomodoro-controls { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin-bottom: 20px; }
+.todo-list { list-style: none; padding: 0; margin: 0; }
+.todo-list li { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid rgba(0,0,0,0.06); }
+.todo-list li.done span { text-decoration: line-through; opacity: 0.5; }
+.research-card { margin-bottom: 16px; }
+.research-random { background: linear-gradient(135deg, var(--dark-blue), #004e7a); color: white; padding: 24px; border-radius: 20px; margin-bottom: 24px; }
+.prompt-box { background: rgba(193,18,31,0.08); border-left: 4px solid var(--fire-red); padding: 12px 16px; margin-bottom: 12px; font-size: 0.9rem; font-style: italic; }
+.datetime-banner { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 12px; margin-bottom: 24px; }
+.datetime-cell { background: var(--card-bg); padding: 16px; border-radius: 14px; text-align: center; border: 1px solid rgba(0,0,0,0.06); }
+.datetime-cell .dt-label { font-size: 0.65rem; text-transform: uppercase; opacity: 0.6; }
+.datetime-cell .dt-value { font-size: 1.4rem; font-weight: 900; color: var(--fire-red); margin-top: 4px; }
+
+@media (max-width: 768px) {
+    body { flex-direction: column; }
+    aside { width: 100%; height: auto; padding: 1rem; flex-direction: row; justify-content: space-between; border-right: none; border-bottom: 4px solid var(--fire-red); }
+    nav ul { display: flex; gap: 5px; margin: 0; }
+    nav li { padding: 10px; margin: 0; font-size: 0.7rem; flex-direction: column; gap: 5px; }
+    .logo, .theme-toggle, .export-btn, .import-label, .search-hint { display: none; }
+    .mobile-tools { display: flex; }
+    main { margin: 10px; padding: 1.5rem; }
+    .bento-grid { grid-template-columns: 1fr; grid-auto-rows: auto; }
+    .big, .wide, .tall, .span2 { grid-column: span 1; grid-row: span 1; }
+    .stat-row { grid-template-columns: repeat(2, 1fr); }
+}
+</style>
+</head>
+<body>
+
+<aside>
+    <div class="logo" onclick="switchView('home')">Selfquest</div>
+    <div class="sidebar-clock">
+        <div class="clock-time" id="sidebar-time">--:--</div>
+        <div class="clock-date" id="sidebar-date">---</div>
+    </div>
+    <nav class="nav-scroll">
+        <ul>
+            <li onclick="switchView('home')" id="nav-home" class="active"><i class="fa fa-th-large"></i> Dash</li>
+            <li onclick="switchView('calendar')" id="nav-calendar"><i class="fa fa-calendar"></i> Calendar</li>
+            <li onclick="switchView('todos')" id="nav-todos"><i class="fa fa-list-check"></i> To-Do</li>
+            <li onclick="switchView('pomodoro')" id="nav-pomodoro"><i class="fa fa-clock"></i> Pomodoro</li>
+            <li onclick="switchView('habits')" id="nav-habits"><i class="fa fa-check-circle"></i> Habits</li>
+            <li onclick="switchView('library')" id="nav-library"><i class="fa fa-book"></i> Library</li>
+            <li onclick="switchView('research')" id="nav-research"><i class="fa fa-flask"></i> Research</li>
+            <li onclick="switchView('workouts')" id="nav-workouts"><i class="fa fa-dumbbell"></i> Workouts</li>
+            <li onclick="switchView('principles')" id="nav-principles"><i class="fa fa-feather-pointed"></i> Philosophies</li>
+            <li onclick="switchView('decisions')" id="nav-decisions"><i class="fa fa-code-branch"></i> Decisions</li>
+            <li onclick="switchView('reflection')" id="nav-reflection"><i class="fa fa-mirror"></i> Reflection</li>
+            <li onclick="switchView('gratitude')" id="nav-gratitude"><i class="fa fa-heart"></i> Gratitude</li>
+            <li onclick="switchView('journal')" id="nav-journal"><i class="fa fa-pen"></i> Journal</li>
+            <li onclick="switchView('goals')" id="nav-goals"><i class="fa fa-flag"></i> Goals</li>
+        </ul>
+    </nav>
+
+    <div class="mobile-tools">
+        <button type="button" class="mobile-icon-btn" onclick="toggleTheme()" title="Theme"><i class="fa fa-moon"></i></button>
+        <button type="button" class="mobile-icon-btn" onclick="exportData()" title="Backup"><i class="fa fa-download"></i></button>
+        <label class="mobile-icon-btn" for="import-json" style="cursor:pointer"><i class="fa fa-upload"></i></label>
+    </div>
+
+    <div class="theme-toggle" onclick="toggleTheme()">
+        <i class="fa fa-moon"></i> Mode
+    </div>
+    <button class="export-btn" onclick="exportData()"><i class="fa fa-download"></i> Backup</button>
+    <button class="export-btn" style="margin-top:6px" onclick="exportEncrypted()"><i class="fa fa-lock"></i> Encrypted</button>
+    <div class="search-hint"><span class="kbd">Ctrl</span>+<span class="kbd">K</span> Search · <span class="kbd">1-9</span> Views</div>
+    <label class="import-label" for="import-json">
+        <i class="fa fa-upload"></i> Restore
+    </label>
+    <input type="file" id="import-json" class="hidden-file-input" onchange="importData(event)">
+</aside>
+
+<main>
+    <section id="home" class="view active">
+        <h1>Intelligence Feed</h1>
+
+        <div class="datetime-banner" data-widget="dateTime">
+            <div class="datetime-cell"><span class="dt-label">Time</span><div class="dt-value" id="dash-time">--:--</div></div>
+            <div class="datetime-cell"><span class="dt-label">Day</span><div class="dt-value" id="dash-day">---</div></div>
+            <div class="datetime-cell"><span class="dt-label">Date</span><div class="dt-value" id="dash-date">--</div></div>
+            <div class="datetime-cell"><span class="dt-label">Month</span><div class="dt-value" id="dash-month">---</div></div>
+            <div class="datetime-cell"><span class="dt-label">Year</span><div class="dt-value" id="dash-year">----</div></div>
+        </div>
+
+        <div class="dash-toolbar" data-widget="quickActions">
+            <div class="quick-actions">
+                <button type="button" class="quick-btn" onclick="quickAdd('habits')"><i class="fa fa-plus"></i> Habit</button>
+                <button type="button" class="quick-btn" onclick="quickAdd('library')"><i class="fa fa-plus"></i> Book</button>
+                <button type="button" class="quick-btn" onclick="quickAdd('principles')"><i class="fa fa-plus"></i> Principle</button>
+                <button type="button" class="quick-btn" onclick="quickAdd('decisions')"><i class="fa fa-plus"></i> Decision</button>
+            </div>
+            <button type="button" class="customize-btn" onclick="toggleWidgetSettings()"><i class="fa fa-sliders"></i> Customize feed</button>
+        </div>
+
+        <div id="widget-settings" class="widget-settings"></div>
+
+        <div id="bento-grid" class="bento-grid">
+            <div class="card wide" data-widget="dailyFocus" style="background: var(--dark-blue); color: white;">
+                <div class="card-header"><h3 style="color: var(--light-blue)"><i class="fa fa-bullseye"></i> Daily Focus</h3></div>
+                <textarea id="daily-focus-input" class="focus-input" placeholder="What matters most today?" onblur="saveDailyFocus()"></textarea>
+            </div>
+
+            <div class="card span2" data-widget="todayHabits">
+                <div class="card-header">
+                    <h3><i class="fa fa-check-circle"></i> Today's Habits</h3>
+                    <span style="font-size: 0.7rem; color: var(--light-blue); cursor: pointer;" onclick="switchView('habits')">ALL -></span>
+                </div>
+                <ul id="dash-today-habits" class="today-habits-list"></ul>
+            </div>
+
+            <div class="card span2" data-widget="weekProgress">
+                <div class="card-header"><h3><i class="fa fa-chart-line"></i> Week Progress</h3></div>
+                <p id="week-progress-label" style="margin: 0; font-size: 0.9rem;">0% complete</p>
+                <div class="progress-container"><div id="week-progress-bar" class="progress-bar" style="width: 0%"></div></div>
+                <p id="week-progress-detail" style="font-size: 0.75rem; opacity: 0.7; margin-top: 8px;"></p>
+            </div>
+
+            <div class="card big" data-widget="activeMedia">
+                <div class="card-header">
+                    <h3><i class="fa fa-book"></i> Active Media</h3>
+                    <span style="font-size: 0.7rem; color: var(--light-blue); cursor: pointer;" onclick="switchView('library')">ARCHIVE -></span>
+                </div>
+                <ul id="dash-lib-list" class="data-list"></ul>
+            </div>
+
+            <div class="card span2" data-widget="readingQueue">
+                <div class="card-header">
+                    <h3><i class="fa fa-list"></i> Reading Queue</h3>
+                    <span style="font-size: 0.7rem; color: var(--light-blue); cursor: pointer;" onclick="switchView('library')">LIBRARY -></span>
+                </div>
+                <ul id="dash-reading-queue" class="data-list"></ul>
+            </div>
+
+            <div class="card wide" data-widget="principleOfDay" style="background: var(--dark-blue); color: white;">
+                <div class="card-header"><h3 style="color: var(--light-blue)"><i class="fa fa-feather-pointed"></i> Principle of the Day</h3></div>
+                <p id="dash-principle" style="font-size: 1.4rem; font-style: italic; margin-top: 15px; line-height: 1.4;">"Codify your first philosophy to begin."</p>
+            </div>
+
+            <div class="card wide" data-widget="decisionFramework">
+                <div class="card-header"><h3>Decision Framework</h3></div>
+                <div id="dash-decision" style="font-size: 1rem; margin-top: 10px;">
+                    <p style="color: #888;">No logic systems active.</p>
+                </div>
+            </div>
+
+            <div class="card span2" data-widget="vaultBreakdown">
+                <div class="card-header"><h3><i class="fa fa-chart-pie"></i> Vault Breakdown</h3></div>
+                <div id="vault-breakdown" class="stat-row"></div>
+            </div>
+
+            <div class="card span2" data-widget="recentActivity">
+                <div class="card-header"><h3><i class="fa fa-clock"></i> Recent Activity</h3></div>
+                <ul id="dash-activity" class="activity-list"></ul>
+            </div>
+
+            <div class="card span2" data-widget="readingGoal">
+                <div class="card-header"><h3><i class="fa fa-book-open"></i> Reading Goal</h3></div>
+                <p id="reading-goal-text" style="margin:0;font-size:0.95rem"></p>
+                <div class="progress-container"><div id="reading-goal-bar" class="progress-bar" style="width:0%"></div></div>
+                <input type="number" id="reading-goal-input" min="1" max="99" style="width:70px;margin-top:10px;padding:8px" onchange="setReadingGoal(this.value)">
+            </div>
+
+            <div class="card span2" data-widget="reflectPrompt" style="background:var(--dark-blue);color:white">
+                <div class="card-header"><h3 style="color:var(--light-blue)"><i class="fa fa-lightbulb"></i> Reflect</h3></div>
+                <p id="dash-reflect" style="margin-top:12px;font-size:1rem;line-height:1.4"></p>
+            </div>
+
+            <div class="card span2" data-widget="triggerLookup">
+                <div class="card-header"><h3><i class="fa fa-search"></i> Situation Lookup</h3></div>
+                <input type="text" id="dash-trigger-input" placeholder="Describe your situation..." style="width:100%;padding:10px" oninput="renderTriggerLookup(this.value)">
+                <ul id="dash-trigger-results" class="data-list" style="margin-top:10px;max-height:120px;overflow-y:auto"></ul>
+            </div>
+
+            <div class="card tall" data-widget="vaultCapacity" style="background: var(--fire-red); color: white; justify-content: center; text-align: center;">
+                <h3 style="color: white; font-size: 0.7rem; letter-spacing: 2px;">VAULT CAPACITY</h3>
+                <div style="font-size: 4rem; font-weight: 900;" id="stat-count">0</div>
+                <p style="font-weight: bold; text-transform: uppercase; font-size: 0.8rem;">Saved Assets</p>
+            </div>
+        </div>
+    </section>
+
+    <section id="habits" class="view">
+        <h1>Weekly Habits</h1>
+        <div class="admin-box">
+            <div class="input-row">
+                <input type="text" id="habitName" placeholder="Habit Name (e.g., Deep Work)" style="flex:1">
+                <input type="number" id="habitTarget" min="1" max="7" value="7" style="width:90px" title="Weekly target">
+                <button class="primary" onclick="addData('habits')">Install</button>
+                <label style="display:flex;align-items:center;gap:8px;font-size:0.85rem"><input type="checkbox" id="showArchivedHabits" onchange="toggleShowArchived()"> Show archived</label>
+            </div>
+        </div>
+        <div class="card wide" style="height:auto;">
+            <p style="font-size: 0.8rem; opacity: 0.7; margin: 0 0 10px;">Week: <strong id="current-week-label"></strong></p>
+            <table class="habit-table">
+                <thead>
+                    <tr>
+                        <th style="text-align:left;">Habit</th>
+                        <th>M</th><th>T</th><th>W</th><th>T</th><th>F</th><th>S</th><th>S</th><th>Streak</th><th></th>
+                    </tr>
+                </thead>
+                <tbody id="habit-grid"></tbody>
+            </table>
+        </div>
+    </section>
+
+    <section id="library" class="view">
+        <h1>Library</h1>
+        <div class="admin-box">
+            <div class="input-row">
+                <input type="text" id="libTitle" placeholder="Book Title" style="flex:2">
+                <input type="text" id="libAuthor" placeholder="Author Name" style="flex:1">
+                <select id="libStatus">
+                    <option value="notstarted">Not Started</option>
+                    <option value="started">Started</option>
+                    <option value="queued">Queued</option>
+                    <option value="finished">Finished</option>
+                    <option value="annotated">Annotated</option>
+                </select>
+                <input type="text" id="libTags" placeholder="Tags (comma)" style="flex:1">
+                <input type="number" id="libRating" placeholder="1-5" min="0" max="5" style="width:80px">
+            </div>
+            <div class="input-row">
+                <textarea id="libNotes" placeholder="Notes..." style="flex:1;height:60px"></textarea>
+                <button class="primary" onclick="addData('library')">Secure</button>
+            </div>
+        </div>
+        <div class="filter-bar">
+            <input type="text" id="libFilterSearch" placeholder="Search..." oninput="renderLibrary()">
+            <select id="libFilterStatus" onchange="renderLibrary()"><option value="">All statuses</option><option value="notstarted">Not Started</option><option value="started">Started</option><option value="queued">Queued</option><option value="finished">Finished</option><option value="annotated">Annotated</option></select>
+            <select id="libFilterSort" onchange="renderLibrary()"><option value="newest">Newest</option><option value="title">Title</option><option value="author">Author</option><option value="rating">Rating</option></select>
+        </div>
+        <div id="full-lib-list"></div>
+    </section>
+
+    <section id="principles" class="view">
+        <h1><i class="fa fa-feather-pointed"></i> Philosophies</h1>
+        <div class="admin-box">
+            <div class="input-row">
+                <textarea id="princText" placeholder="What is a fundamental truth you live by?" style="flex:1; height: 80px;"></textarea>
+                <select id="princCategory">
+                    <option value="">Category</option>
+                    <option value="Stoicism">Stoicism</option>
+                    <option value="Work">Work</option>
+                    <option value="Relationships">Relationships</option>
+                    <option value="Health">Health</option>
+                    <option value="Other">Other</option>
+                </select>
+                <button class="primary" onclick="addData('principles')">Codify</button>
+            </div>
+        </div>
+        <div class="filter-bar">
+            <input type="text" id="princFilterSearch" placeholder="Search..." oninput="renderPrinciples()">
+            <select id="princFilterCategory" onchange="renderPrinciples()">
+                <option value="">All categories</option>
+                <option value="Stoicism">Stoicism</option>
+                <option value="Work">Work</option>
+                <option value="Relationships">Relationships</option>
+                <option value="Health">Health</option>
+                <option value="Other">Other</option>
+            </select>
+        </div>
+        <div id="full-princ-list"></div>
+    </section>
+
+    <section id="decisions" class="view">
+        <h1>Decision Set</h1>
+        <div class="admin-box">
+            <div class="input-row">
+                <input type="text" id="decIf" placeholder="IF (Trigger/Situation)..." style="flex:1">
+                <input type="text" id="decThen" placeholder="THEN (Automated Response)..." style="flex:1">
+                <select id="decPriority">
+                    <option value="low">Low</option>
+                    <option value="medium" selected>Medium</option>
+                    <option value="high">High</option>
+                </select>
+                <input type="text" id="decTags" placeholder="Tags (Work, Health...)" style="flex:1">
+                <button class="primary" onclick="addData('decisions')">Save Set</button>
+            </div>
+        </div>
+        <div class="filter-bar">
+            <input type="text" id="decTriggerSearch" placeholder="Search triggers..." oninput="renderDecisions()">
+        </div>
+        <div id="full-dec-list"></div>
+    </section>
+
+    <section id="journal" class="view">
+        <h1>Journal</h1>
+        <div class="admin-box">
+            <div class="input-row">
+                <textarea id="journalBody" placeholder="Capture thoughts..." style="flex:1;height:100px"></textarea>
+                <button class="primary" onclick="addData('journal')">Log Entry</button>
+            </div>
+        </div>
+        <div id="full-journal-list"></div>
+    </section>
+
+    <section id="goals" class="view">
+        <h1>Goals / OKR</h1>
+        <div class="admin-box">
+            <div class="input-row">
+                <input type="text" id="goalTitle" placeholder="Objective" style="flex:1">
+                <input type="text" id="goalDesc" placeholder="Key result" style="flex:2">
+                <button class="primary" onclick="addData('goals')">Add Goal</button>
+            </div>
+        </div>
+        <div id="full-goals-list"></div>
+    </section>
+
+    <section id="calendar" class="view">
+        <h1>Calendar</h1>
+        <div class="admin-box">
+            <div class="input-row">
+                <input type="date" id="calEventDate" style="flex:1">
+                <input type="text" id="calEventTitle" placeholder="Event title" style="flex:2">
+                <input type="text" id="calEventNotes" placeholder="Notes" style="flex:2">
+                <button class="primary" onclick="addData('calendar')">Add Event</button>
+            </div>
+            <div class="input-row" style="margin-top:10px">
+                <label style="font-size:0.85rem">Week starts:</label>
+                <select id="calWeekStart" onchange="saveCalendarSettings()">
+                    <option value="0">Sunday</option>
+                    <option value="1">Monday</option>
+                </select>
+                <input type="text" id="calPlanningNote" placeholder="Planning focus (monthly theme...)" style="flex:2" onblur="saveCalendarSettings()">
+            </div>
+        </div>
+        <div class="filter-bar">
+            <button type="button" class="secondary-btn" onclick="shiftCalendarMonth(-1)"><i class="fa fa-chevron-left"></i></button>
+            <strong id="cal-month-label" style="flex:1;text-align:center"></strong>
+            <button type="button" class="secondary-btn" onclick="shiftCalendarMonth(1)"><i class="fa fa-chevron-right"></i></button>
+            <button type="button" class="secondary-btn" onclick="goCalendarToday()">Today</button>
+        </div>
+        <div id="calendar-grid" class="calendar-grid"></div>
+        <div id="cal-day-detail" class="admin-box" style="margin-top:20px;display:none"></div>
+    </section>
+
+    <section id="todos" class="view">
+        <h1>Daily To-Do</h1>
+        <p id="todo-date-label" style="opacity:0.7;margin-top:-20px;margin-bottom:20px"></p>
+        <div class="admin-box">
+            <div class="input-row">
+                <input type="text" id="todoText" placeholder="What needs doing today?" style="flex:1" onkeydown="if(event.key==='Enter')addData('todos')">
+                <button class="primary" onclick="addData('todos')">Add</button>
+            </div>
+        </div>
+        <ul id="todo-list" class="todo-list"></ul>
+    </section>
+
+    <section id="pomodoro" class="view">
+        <h1>Pomodoro</h1>
+        <div class="card wide" style="max-width:520px;margin:0 auto">
+            <div class="pomodoro-ring" id="pomo-display">25:00</div>
+            <p id="pomo-mode-label" style="text-align:center;margin:0;opacity:0.7">Focus session</p>
+            <div class="pomodoro-controls">
+                <button class="primary" id="pomo-start-btn" onclick="togglePomodoro()">Start</button>
+                <button class="secondary-btn" onclick="resetPomodoro()">Reset</button>
+                <button class="secondary-btn" onclick="skipPomodoro()">Skip</button>
+            </div>
+            <div class="input-row" style="justify-content:center">
+                <label>Work <input type="number" id="pomoWorkMin" min="1" max="90" value="25" style="width:60px" onchange="savePomodoroSettings()"> min</label>
+                <label>Break <input type="number" id="pomoBreakMin" min="1" max="30" value="5" style="width:60px" onchange="savePomodoroSettings()"> min</label>
+            </div>
+        </div>
+        <div class="admin-box" style="margin-top:24px">
+            <div class="input-row">
+                <input type="text" id="pomoTaskText" placeholder="Pomodoro task..." style="flex:1" onkeydown="if(event.key==='Enter')addData('pomodoroTask')">
+                <button class="primary" onclick="addData('pomodoroTask')">Add Task</button>
+            </div>
+        </div>
+        <ul id="pomo-task-list" class="todo-list"></ul>
+    </section>
+
+    <section id="research" class="view">
+        <h1>Research</h1>
+        <div class="research-random">
+            <h3 style="margin:0 0 8px">Random topic</h3>
+            <p id="research-random-topic" style="font-size:1.3rem;font-weight:800;margin:0 0 12px">Click to discover</p>
+            <p id="research-random-info" style="margin:0 0 16px;line-height:1.5;opacity:0.95"></p>
+            <button class="secondary-btn" style="border-color:white;color:white" onclick="pickRandomResearch()"><i class="fa fa-shuffle"></i> New topic</button>
+        </div>
+        <div class="admin-box">
+            <div class="input-row">
+                <input type="text" id="researchTopic" placeholder="Topic to explore" style="flex:1">
+                <input type="text" id="researchNotes" placeholder="Notes / source" style="flex:2">
+                <button class="primary" onclick="addData('research')">Queue</button>
+            </div>
+        </div>
+        <div id="research-queue-list"></div>
+    </section>
+
+    <section id="workouts" class="view">
+        <h1>Workouts</h1>
+        <div class="admin-box">
+            <div class="input-row">
+                <input type="text" id="workoutName" placeholder="Workout name" style="flex:1">
+                <select id="workoutType">
+                    <option value="strength">Strength</option>
+                    <option value="cardio">Cardio</option>
+                    <option value="mobility">Mobility</option>
+                    <option value="sport">Sport</option>
+                    <option value="other">Other</option>
+                </select>
+                <input type="number" id="workoutDuration" placeholder="Min" min="1" style="width:80px">
+                <input type="text" id="workoutNotes" placeholder="Notes" style="flex:2">
+                <button class="primary" onclick="addData('workouts')">Log</button>
+            </div>
+        </div>
+        <div id="workout-list"></div>
+    </section>
+
+    <section id="reflection" class="view">
+        <h1>Digital Reflection</h1>
+        <p id="reflection-date-label" style="opacity:0.7;margin-top:-20px;margin-bottom:12px"></p>
+        <div class="prompt-box" id="reflection-prompt"></div>
+        <div class="admin-box">
+            <textarea id="reflectionBody" placeholder="Write your reflection..." style="width:100%;height:120px"></textarea>
+            <div class="input-row" style="margin-top:12px">
+                <button class="primary" onclick="addData('reflection')">Save reflection</button>
+                <button class="secondary-btn" onclick="newReflectionPrompt()">New prompt</button>
+            </div>
+        </div>
+        <div id="reflection-list"></div>
+    </section>
+
+    <section id="gratitude" class="view">
+        <h1>Gratitude Journal</h1>
+        <p id="gratitude-date-label" style="opacity:0.7;margin-top:-20px;margin-bottom:12px"></p>
+        <div class="admin-box">
+            <div class="input-row" style="flex-direction:column;align-items:stretch">
+                <input type="text" id="gratitude1" placeholder="I am grateful for...">
+                <input type="text" id="gratitude2" placeholder="I appreciate...">
+                <input type="text" id="gratitude3" placeholder="Today I noticed...">
+                <button class="primary" onclick="addData('gratitude')" style="align-self:flex-start">Save entry</button>
+            </div>
+        </div>
+        <div id="gratitude-list"></div>
+    </section>
+</main>
+
+<div id="search-modal" class="modal-overlay" onclick="if(event.target===this)closeSearch()">
+    <div class="modal-box">
+        <h2><i class="fa fa-search"></i> Global Search</h2>
+        <input type="text" id="global-search-input" placeholder="Search everything..." oninput="runGlobalSearch(this.value)">
+        <ul id="global-search-results" class="search-results"></ul>
+    </div>
+</div>
+
+<script>
+    const BANK_VERSION = 4;
+    const ACTIVITY_CAP = 20;
+    const DEFAULT_WIDGETS = { dateTime: true, quickActions: true, dailyFocus: true, todayHabits: true, weekProgress: true, activeMedia: true, readingQueue: true, principleOfDay: true, decisionFramework: true, vaultBreakdown: true, vaultCapacity: true, recentActivity: true, readingGoal: true, reflectPrompt: true, triggerLookup: true };
+    const WIDGET_LABELS = { dateTime: 'Date & time', quickActions: 'Quick actions', dailyFocus: 'Daily focus', todayHabits: "Today's habits", weekProgress: 'Week progress', activeMedia: 'Active media', readingQueue: 'Reading queue', principleOfDay: 'Principle of the day', decisionFramework: 'Decision framework', vaultBreakdown: 'Vault breakdown', vaultCapacity: 'Vault capacity', recentActivity: 'Recent activity', readingGoal: 'Reading goal', reflectPrompt: 'Reflect', triggerLookup: 'Situation lookup' };
+    const REFLECT_PROMPTS = ['How did you live your principle today?', 'What would make today a win?', 'What are you avoiding?', 'What matters most right now?'];
+    const REFLECTION_PROMPTS = ['What emotion dominated today, and why?', 'Where did you act aligned with your values?', 'What would you do differently with one more hour?', 'Who made your day better, and did you tell them?', 'What did you learn that you can apply tomorrow?'];
+    const RESEARCH_TOPICS = [
+        { topic: 'Sleep architecture', info: 'Study REM vs deep sleep cycles and how temperature, light, and caffeine shift your nightly recovery.' },
+        { topic: 'Habit stacking', info: 'Explore anchoring new behaviors to existing routines and measuring adherence with tiny daily wins.' },
+        { topic: 'Decision fatigue', info: 'Research how choice overload drains willpower and how defaults, checklists, and rules reduce friction.' },
+        { topic: 'Zone 2 cardio', info: 'Learn why low-intensity aerobic work builds mitochondrial density and long-term metabolic health.' },
+        { topic: 'Ultradian rhythms', info: 'Investigate 90–120 minute focus cycles and why strategic breaks outperform marathon grinding.' },
+        { topic: 'Stoic dichotomy of control', info: 'Separate what you can influence from what you cannot, then invest energy only where leverage exists.' },
+        { topic: 'Nutrition timing', info: 'Compare protein distribution, meal spacing, and training-window fueling for energy and recovery.' },
+        { topic: 'Deep work protocols', info: 'Review distraction blocking, environment design, and shutdown rituals that protect attention.' },
+        { topic: 'Gratitude neuroscience', info: 'Read how consistent gratitude practice shifts attention bias and stress physiology over weeks.' },
+        { topic: 'Personal knowledge management', info: 'Map capture → refine → connect workflows so ideas compound instead of disappearing.' }
+    ];
+    
+    let calendarViewMonth = new Date();
+    let calendarSelectedDate = getTodayKey();
+    let reflectionPromptIndex = 0;
+    let pomodoroTimer = null;
+    let pomodoroState = { running: false, mode: 'work', secondsLeft: 25 * 60 };
+    let bank = migrateBank(JSON.parse(localStorage.getItem('growthOS_master')) || {});
+
+    function escapeHtml(str) {
+        if (str == null) return '';
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;');
+    }
+
+    function getTodayKey() {
+        const now = new Date();
+        return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    }
+
+    function getTodayDayIndex() {
+        return new Date().getDay() === 0 ? 6 : new Date().getDay() - 1;
+    }
+
+    function getISOWeekKey(date = new Date()) {
+        const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+        const dayNum = d.getUTCDay() || 7;
+        d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+        const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+        const weekNo = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+        return `${d.getUTCFullYear()}-W${String(weekNo).padStart(2, '0')}`;
+    }
+
+    function getPrincipleText(p) {
+        return typeof p === 'string' ? p : (p && p.text) || '';
+    }
+
+    function migrateBank(raw) {
+        const bank = raw || {};
+        bank.library = Array.isArray(bank.library) ? bank.library : [];
+        bank.principles = Array.isArray(bank.principles) ? bank.principles : [];
+        bank.decisions = Array.isArray(bank.decisions) ? bank.decisions : [];
+        bank.habits = Array.isArray(bank.habits) ? bank.habits : [];
+        bank.journal = Array.isArray(bank.journal) ? bank.journal : [];
+        bank.goals = Array.isArray(bank.goals) ? bank.goals : [];
+        bank.todos = Array.isArray(bank.todos) ? bank.todos : [];
+        bank.workouts = Array.isArray(bank.workouts) ? bank.workouts : [];
+        bank.reflections = Array.isArray(bank.reflections) ? bank.reflections : [];
+        bank.gratitude = Array.isArray(bank.gratitude) ? bank.gratitude : [];
+        bank.research = bank.research && typeof bank.research === 'object' ? bank.research : { queue: [] };
+        bank.research.queue = Array.isArray(bank.research.queue) ? bank.research.queue : [];
+        bank.calendar = bank.calendar && typeof bank.calendar === 'object' ? bank.calendar : { events: [], settings: {} };
+        bank.calendar.events = Array.isArray(bank.calendar.events) ? bank.calendar.events : [];
+        bank.calendar.settings = bank.calendar.settings || {};
+        if (bank.calendar.settings.weekStartsOn == null) bank.calendar.settings.weekStartsOn = 1;
+        if (bank.calendar.settings.planningNote == null) bank.calendar.settings.planningNote = '';
+        bank.pomodoro = bank.pomodoro && typeof bank.pomodoro === 'object' ? bank.pomodoro : { settings: {}, tasks: [] };
+        bank.pomodoro.tasks = Array.isArray(bank.pomodoro.tasks) ? bank.pomodoro.tasks : [];
+        bank.pomodoro.settings = bank.pomodoro.settings || {};
+        if (bank.pomodoro.settings.workMin == null) bank.pomodoro.settings.workMin = 25;
+        if (bank.pomodoro.settings.breakMin == null) bank.pomodoro.settings.breakMin = 5;
+
+        bank.library = bank.library.map(b => ({
+            title: b.title || '',
+            author: b.author || '',
+            status: b.status || 'notstarted',
+            notes: b.notes || '',
+            tags: Array.isArray(b.tags) ? b.tags : (b.tags ? String(b.tags).split(',').map(t => t.trim()).filter(Boolean) : []),
+            rating: b.rating || 0,
+            startedAt: b.startedAt || '',
+            finishedAt: b.finishedAt || ''
+        }));
+
+        bank.principles = bank.principles.map(p =>
+            typeof p === 'string' ? { text: p, pinned: false, category: '' } : { text: getPrincipleText(p), pinned: !!p.pinned, category: p.category || '' }
+        );
+
+        bank.decisions = bank.decisions.map(d => ({
+            if: d.if || '',
+            then: d.then || '',
+            pinned: !!d.pinned,
+            priority: d.priority || 'medium',
+            tags: Array.isArray(d.tags) ? d.tags : (d.tags ? String(d.tags).split(',').map(t => t.trim()).filter(Boolean) : [])
+        }));
+
+        const weekKey = getISOWeekKey();
+        bank.habits.forEach(h => {
+            if (h.days && !h.weeks) {
+                h.weeks = { [weekKey]: h.days.slice(0, 7) };
+                delete h.days;
+            }
+            if (!h.weeks) h.weeks = {};
+            if (!h.weeks[weekKey]) h.weeks[weekKey] = [false, false, false, false, false, false, false];
+            while (h.weeks[weekKey].length < 7) h.weeks[weekKey].push(false);
+            if (h.weeklyTarget == null) h.weeklyTarget = 7;
+            if (h.archived == null) h.archived = false;
+        });
+
+        if (!bank.meta) bank.meta = {};
+        bank.meta.version = BANK_VERSION;
+        bank.meta.activity = Array.isArray(bank.meta.activity) ? bank.meta.activity : [];
+        if (!bank.meta.principleOfDay) bank.meta.principleOfDay = { date: '', index: 0 };
+        if (bank.meta.dailyFocus == null) bank.meta.dailyFocus = '';
+        if (!bank.meta.dailyFocusDate) bank.meta.dailyFocusDate = '';
+
+        if (!bank.settings) bank.settings = {};
+        bank.settings.dashboardWidgets = { ...DEFAULT_WIDGETS, ...(bank.settings.dashboardWidgets || {}) };
+        if (bank.settings.readingGoalMonthly == null) bank.settings.readingGoalMonthly = 3;
+        if (bank.settings.showArchivedHabits == null) bank.settings.showArchivedHabits = false;
+
+        return bank;
+    }
+
+    function getHabitDays(habit) {
+        const key = getISOWeekKey();
+        if (!habit.weeks) habit.weeks = {};
+        if (!habit.weeks[key]) habit.weeks[key] = [false, false, false, false, false, false, false];
+        return habit.weeks[key];
+    }
+
+    function getHabitStreak(habit) {
+        let streak = 0;
+        const cursor = new Date();
+        for (let i = 0; i < 52; i++) {
+            const key = getISOWeekKey(cursor);
+            const days = habit.weeks && habit.weeks[key];
+            if (days && days.some(Boolean)) {
+                streak++;
+                cursor.setDate(cursor.getDate() - 7);
+            } else {
+                break;
+            }
+        }
+        return streak;
+    }
+
+    function getWeekProgress() {
+        const habits = bank.habits.filter(h => !h.archived);
+        if (!habits.length) return { pct: 0, checked: 0, total: 0 };
+        let checked = 0;
+        const total = habits.length * 7;
+        habits.forEach(h => {
+            getHabitDays(h).forEach(d => { if (d) checked++; });
+        });
+        return { pct: total ? Math.round((checked / total) * 100) : 0, checked, total };
+    }
+
+    function logActivity(type, action, label) {
+        bank.meta.activity.unshift({
+            type,
+            action,
+            label: label || type,
+            at: new Date().toISOString()
+        });
+        if (bank.meta.activity.length > ACTIVITY_CAP) {
+            bank.meta.activity.length = ACTIVITY_CAP;
+        }
+    }
+
+    function formatActivityTime(iso) {
+        const d = new Date(iso);
+        const now = new Date();
+        const diff = now - d;
+        if (diff < 60000) return 'just now';
+        if (diff < 3600000) return `${Math.floor(diff / 60000)}m ago`;
+        if (diff < 86400000) return `${Math.floor(diff / 3600000)}h ago`;
+        return d.toLocaleDateString();
+    }
+
+    function updatePrincipleOfDay() {
+        const today = getTodayKey();
+        const pod = bank.meta.principleOfDay;
+        const texts = bank.principles.map(getPrincipleText).filter(Boolean);
+        if (!texts.length) return;
+
+        const pinned = bank.principles.find(p => p.pinned);
+        if (pinned && pod.date !== today) {
+            pod.date = today;
+            pod.index = bank.principles.indexOf(pinned);
+            pod.usePinned = true;
+        }
+
+        if (pod.date !== today || pod.index >= texts.length) {
+            pod.date = today;
+            if (pinned) {
+                pod.index = bank.principles.indexOf(pinned);
+                pod.usePinned = true;
+            } else {
+                pod.index = Math.floor(Math.random() * texts.length);
+                pod.usePinned = false;
+            }
+        }
+    }
+
+    function getPrincipleOfDayText() {
+        updatePrincipleOfDay();
+        const p = bank.principles[bank.meta.principleOfDay.index];
+        return p ? getPrincipleText(p) : '';
+    }
+
+    function persist() {
+        localStorage.setItem('growthOS_master', JSON.stringify(bank));
+        render();
+        const stat = document.getElementById('stat-count');
+        if (stat) {
+            stat.classList.remove('stat-animate');
+            void stat.offsetWidth;
+            stat.classList.add('stat-animate');
+        }
+    }
+
+    function toggleTheme() {
+        document.body.classList.toggle('dark-theme');
+        localStorage.setItem('growthOS_theme', document.body.classList.contains('dark-theme') ? 'dark' : 'light');
+    }
+    if (localStorage.getItem('growthOS_theme') === 'dark') document.body.classList.add('dark-theme');
+
+    function exportData() {
+        const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(bank));
+        const a = document.createElement('a');
+        a.setAttribute('href', dataStr);
+        a.setAttribute('download', 'growth_os_backup.json');
+        a.click();
+        a.remove();
+    }
+
+    function importData(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = async function(e) {
+            try {
+                let parsed = JSON.parse(e.target.result);
+                if (parsed.encrypted && parsed.payload) {
+                    const pw = prompt('Password for encrypted backup:');
+                    if (!pw) return;
+                    const plain = await decryptBackup(parsed.payload, pw);
+                    parsed = JSON.parse(plain);
+                }
+                if (!validateImport(parsed)) { alert('Invalid backup: missing required data.'); return; }
+                bank = migrateBank(parsed);
+                logActivity('system', 'import', 'Backup restored');
+                persist();
+            } catch (err) {
+                alert('Invalid Backup File: ' + err.message);
+            }
+            event.target.value = '';
+        };
+        reader.readAsText(file);
+    }
+
+    function addData(type) {
+        if (type === 'library') {
+            const title = document.getElementById('libTitle').value.trim();
+            const author = document.getElementById('libAuthor').value.trim();
+            const status = document.getElementById('libStatus').value;
+            if (!title || !author) { alert('Title and Author required'); return; }
+            const now = getTodayKey();
+            const item = {
+                title, author, status,
+                notes: (document.getElementById('libNotes') && document.getElementById('libNotes').value.trim()) || '',
+                tags: ((document.getElementById('libTags') && document.getElementById('libTags').value) || '').split(',').map(t => t.trim()).filter(Boolean),
+                rating: parseInt(document.getElementById('libRating') && document.getElementById('libRating').value, 10) || 0,
+                startedAt: status === 'started' ? now : '',
+                finishedAt: status === 'finished' ? now : ''
+            };
+            bank.library.push(item);
+            logActivity('library', 'add', title);
+            document.getElementById('libTitle').value = '';
+            document.getElementById('libAuthor').value = '';
+            document.getElementById('libNotes').value = '';
+            document.getElementById('libTags').value = '';
+            document.getElementById('libRating').value = '';
+        } else if (type === 'principles') {
+            const text = document.getElementById('princText').value.trim();
+            if (!text) { alert('Principle text required'); return; }
+            const cat = document.getElementById('princCategory') ? document.getElementById('princCategory').value : '';
+            bank.principles.push({ text, pinned: false, category: cat });
+            logActivity('principles', 'add', text.slice(0, 40));
+            document.getElementById('princText').value = '';
+            document.getElementById('princCategory').value = '';
+        } else if (type === 'decisions') {
+            const ifC = document.getElementById('decIf').value.trim();
+            const thenC = document.getElementById('decThen').value.trim();
+            if (!ifC || !thenC) { alert('IF and THEN required'); return; }
+            const priority = document.getElementById('decPriority') ? document.getElementById('decPriority').value : 'medium';
+            const tags = ((document.getElementById('decTags') && document.getElementById('decTags').value) || '').split(',').map(t => t.trim()).filter(Boolean);
+            bank.decisions.push({ if: ifC, then: thenC, pinned: false, priority, tags });
+            logActivity('decisions', 'add', ifC.slice(0, 40));
+            document.getElementById('decIf').value = '';
+            document.getElementById('decThen').value = '';
+            document.getElementById('decTags').value = '';
+        } else if (type === 'habits') {
+            const hName = document.getElementById('habitName').value.trim();
+            if (!hName) { alert('Habit name required'); return; }
+            if (bank.habits.some(h => h.name.toLowerCase() === hName.toLowerCase())) { alert('Habit already exists'); return; }
+            const key = getISOWeekKey();
+            const target = parseInt(document.getElementById('habitTarget') && document.getElementById('habitTarget').value, 10) || 7;
+            bank.habits.push({
+                name: hName,
+                weeks: { [key]: [false, false, false, false, false, false, false] },
+                weeklyTarget: Math.min(7, Math.max(1, target)),
+                archived: false
+            });
+            logActivity('habits', 'add', hName);
+            document.getElementById('habitName').value = '';
+        } else if (type === 'journal') {
+            const body = document.getElementById('journalBody').value.trim();
+            if (!body) { alert('Journal entry required'); return; }
+            bank.journal.unshift({ body, date: getTodayKey(), at: new Date().toISOString() });
+            logActivity('journal', 'add', body.slice(0, 40));
+            document.getElementById('journalBody').value = '';
+        } else if (type === 'goals') {
+            const title = document.getElementById('goalTitle').value.trim();
+            if (!title) { alert('Goal title required'); return; }
+            const description = document.getElementById('goalDesc').value.trim();
+            bank.goals.push({ title, description, done: false, at: new Date().toISOString() });
+            logActivity('goals', 'add', title);
+            document.getElementById('goalTitle').value = '';
+            document.getElementById('goalDesc').value = '';
+        } else if (type === 'todos') {
+            const text = document.getElementById('todoText').value.trim();
+            if (!text) return;
+            bank.todos.unshift({ text, done: false, date: getTodayKey(), at: new Date().toISOString() });
+            logActivity('todos', 'add', text.slice(0, 40));
+            document.getElementById('todoText').value = '';
+        } else if (type === 'calendar') {
+            const date = (document.getElementById('calEventDate') && document.getElementById('calEventDate').value) || getTodayKey();
+            const title = document.getElementById('calEventTitle').value.trim();
+            const notes = (document.getElementById('calEventNotes') && document.getElementById('calEventNotes').value.trim()) || '';
+            if (!title) { alert('Event title required'); return; }
+            bank.calendar.events.push({ date, title, notes, at: new Date().toISOString() });
+            calendarSelectedDate = date;
+            logActivity('calendar', 'add', title);
+            document.getElementById('calEventTitle').value = '';
+            if (document.getElementById('calEventNotes')) document.getElementById('calEventNotes').value = '';
+            if (document.getElementById('calEventDate')) document.getElementById('calEventDate').value = '';
+        } else if (type === 'research') {
+            const topic = document.getElementById('researchTopic').value.trim();
+            const notes = (document.getElementById('researchNotes') && document.getElementById('researchNotes').value.trim()) || '';
+            if (!topic) { alert('Research topic required'); return; }
+            bank.research.queue.unshift({ topic, notes, done: false, at: new Date().toISOString() });
+            logActivity('research', 'add', topic);
+            document.getElementById('researchTopic').value = '';
+            if (document.getElementById('researchNotes')) document.getElementById('researchNotes').value = '';
+        } else if (type === 'workouts') {
+            const name = document.getElementById('workoutName').value.trim();
+            if (!name) { alert('Workout name required'); return; }
+            const typeW = document.getElementById('workoutType') ? document.getElementById('workoutType').value : 'other';
+            const duration = parseInt(document.getElementById('workoutDuration') && document.getElementById('workoutDuration').value, 10) || 0;
+            const notes = (document.getElementById('workoutNotes') && document.getElementById('workoutNotes').value.trim()) || '';
+            bank.workouts.unshift({ name, type: typeW, duration, notes, date: getTodayKey(), at: new Date().toISOString() });
+            logActivity('workouts', 'add', name);
+            document.getElementById('workoutName').value = '';
+            if (document.getElementById('workoutDuration')) document.getElementById('workoutDuration').value = '';
+            if (document.getElementById('workoutNotes')) document.getElementById('workoutNotes').value = '';
+        } else if (type === 'reflection') {
+            const body = document.getElementById('reflectionBody').value.trim();
+            if (!body) { alert('Reflection required'); return; }
+            const prompt = getReflectionPrompt();
+            bank.reflections.unshift({ body, prompt, date: getTodayKey(), at: new Date().toISOString() });
+            logActivity('reflection', 'add', body.slice(0, 40));
+            document.getElementById('reflectionBody').value = '';
+        } else if (type === 'gratitude') {
+            const items = ['gratitude1', 'gratitude2', 'gratitude3'].map(id => (document.getElementById(id) && document.getElementById(id).value.trim()) || '').filter(Boolean);
+            if (!items.length) { alert('At least one gratitude item required'); return; }
+            bank.gratitude.unshift({ items, date: getTodayKey(), at: new Date().toISOString() });
+            logActivity('gratitude', 'add', items[0].slice(0, 40));
+            ['gratitude1', 'gratitude2', 'gratitude3'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+        } else if (type === 'pomodoroTask') {
+            const text = document.getElementById('pomoTaskText').value.trim();
+            if (!text) return;
+            bank.pomodoro.tasks.push({ text, done: false, pomodoros: 0 });
+            logActivity('pomodoro', 'add', text.slice(0, 40));
+            document.getElementById('pomoTaskText').value = '';
+        }
+        persist();
+    }
+
+    function toggleHabit(hIdx, dIdx) {
+        const habit = bank.habits[hIdx];
+        const days = getHabitDays(habit);
+        days[dIdx] = !days[dIdx];
+        logActivity('habits', 'toggle', habit.name);
+        persist();
+    }
+
+    function togglePin(type, index) {
+        if (type === 'principles') {
+            const wasPinned = bank.principles[index].pinned;
+            bank.principles.forEach(p => { p.pinned = false; });
+            bank.principles[index].pinned = !wasPinned;
+            bank.meta.principleOfDay.date = '';
+        } else if (type === 'decisions') {
+            const wasPinned = bank.decisions[index].pinned;
+            bank.decisions.forEach(d => { d.pinned = false; });
+            bank.decisions[index].pinned = !wasPinned;
+        }
+        persist();
+    }
+
+    function remove(type, index) {
+        let item, label = type;
+        if (type === 'calendar') {
+            item = bank.calendar.events[index];
+            label = item ? item.title : type;
+            bank.calendar.events.splice(index, 1);
+        } else if (type === 'research') {
+            item = bank.research.queue[index];
+            label = item ? item.topic : type;
+            bank.research.queue.splice(index, 1);
+        } else if (type === 'pomodoro') {
+            item = bank.pomodoro.tasks[index];
+            label = item ? item.text : type;
+            bank.pomodoro.tasks.splice(index, 1);
+        } else {
+            item = bank[type][index];
+            if (type === 'library' && item) label = item.title;
+            else if (type === 'habits' && item) label = item.name;
+            else if (type === 'principles' && item) label = getPrincipleText(item).slice(0, 40);
+            else if (type === 'decisions' && item) label = item.if;
+            else if (type === 'todos' && item) label = item.text;
+            else if (type === 'workouts' && item) label = item.name;
+            bank[type].splice(index, 1);
+        }
+        logActivity(type, 'remove', label);
+        persist();
+    }
+
+    function saveDailyFocus() {
+        const val = document.getElementById('daily-focus-input').value.trim();
+        bank.meta.dailyFocus = val;
+        bank.meta.dailyFocusDate = getTodayKey();
+        persist();
+    }
+
+    function syncDailyFocusInput() {
+        const el = document.getElementById('daily-focus-input');
+        if (!el) return;
+        const today = getTodayKey();
+        if (bank.meta.dailyFocusDate && bank.meta.dailyFocusDate !== today) {
+            bank.meta.dailyFocus = '';
+            bank.meta.dailyFocusDate = today;
+            localStorage.setItem('growthOS_master', JSON.stringify(bank));
+        } else if (!bank.meta.dailyFocusDate) {
+            bank.meta.dailyFocusDate = today;
+        }
+        if (document.activeElement !== el) {
+            el.value = bank.meta.dailyFocus || '';
+        }
+    }
+
+    function toggleWidgetSettings() {
+        document.getElementById('widget-settings').classList.toggle('open');
+    }
+
+    function setWidgetVisible(key, visible) {
+        bank.settings.dashboardWidgets[key] = visible;
+        persist();
+    }
+
+    function renderWidgetSettings() {
+        const panel = document.getElementById('widget-settings');
+        const widgets = bank.settings.dashboardWidgets;
+        panel.innerHTML = '<strong style="font-size:0.85rem;">Show widgets:</strong><br>' +
+            Object.keys(WIDGET_LABELS).map(key =>
+                `<label><input type="checkbox" ${widgets[key] !== false ? 'checked' : ''} onchange="setWidgetVisible('${key}', this.checked)"> ${WIDGET_LABELS[key]}</label>`
+            ).join('');
+    }
+
+    function applyWidgetVisibility() {
+        const widgets = bank.settings.dashboardWidgets;
+        document.querySelectorAll('[data-widget]').forEach(el => {
+            const key = el.getAttribute('data-widget');
+            if (widgets[key] === false) el.classList.add('widget-hidden');
+            else el.classList.remove('widget-hidden');
+        });
+    }
+
+    function quickAdd(view) {
+        switchView(view);
+        const focusMap = {
+            habits: 'habitName',
+            library: 'libTitle',
+            principles: 'princText',
+            decisions: 'decIf'
+        };
+        setTimeout(() => {
+            const el = document.getElementById(focusMap[view]);
+            if (el) el.focus();
+        }, 100);
+    }
+
+    function renderDashboard() {
+        syncDailyFocusInput();
+        applyWidgetVisibility();
+        renderWidgetSettings();
+
+        const dashLib = document.getElementById('dash-lib-list');
+        const recentLib = bank.library.slice(-5).reverse();
+        dashLib.innerHTML = recentLib.length
+            ? recentLib.map(b => `<li><div><strong>${escapeHtml(b.title)}</strong><span class="author">${escapeHtml(b.author)}</span></div><span class="status-tag status-${escapeHtml(b.status)}">${escapeHtml(b.status)}</span></li>`).join('')
+            : '<li style="color:#888">No media yet.</li>';
+
+        const queue = bank.library.filter(b => b.status === 'queued' || b.status === 'started').slice(0, 5);
+        const dashQueue = document.getElementById('dash-reading-queue');
+        dashQueue.innerHTML = queue.length
+            ? queue.map(b => `<li><div><strong>${escapeHtml(b.title)}</strong><span class="author">${escapeHtml(b.author)}</span></div><span class="status-tag status-${escapeHtml(b.status)}">${escapeHtml(b.status)}</span></li>`).join('')
+            : '<li style="color:#888">Queue empty — add started or queued items.</li>';
+
+        const dashPrinc = document.getElementById('dash-principle');
+        const princText = getPrincipleOfDayText();
+        dashPrinc.textContent = princText ? `"${princText}"` : '"Codify your first philosophy to begin."';
+
+        const dashDec = document.getElementById('dash-decision');
+        const pinnedDec = bank.decisions.find(d => d.pinned);
+        const d = pinnedDec || bank.decisions[bank.decisions.length - 1];
+        if (d) {
+            const pinLabel = pinnedDec ? '<span class="status-tag" style="background:var(--fire-red);margin-bottom:8px;display:inline-block;">PINNED</span><br>' : '';
+            dashDec.innerHTML = pinLabel +
+                `<p><strong style="color:var(--fire-red)">IF:</strong> ${escapeHtml(d.if)}<br><strong style="color:var(--dark-blue)">THEN:</strong> ${escapeHtml(d.then)}</p>`;
+        } else {
+            dashDec.innerHTML = '<p style="color: #888;">No logic systems active.</p>';
+        }
+
+        updateDateTimeDisplays();
+        const total = bank.library.length + bank.principles.length + bank.decisions.length + bank.habits.length
+            + (bank.journal || []).length + (bank.goals || []).length + (bank.todos || []).length
+            + (bank.workouts || []).length + (bank.reflections || []).length + (bank.gratitude || []).length
+            + (bank.research.queue || []).length + (bank.calendar.events || []).length + (bank.pomodoro.tasks || []).length;
+        document.getElementById('stat-count').textContent = total;
+
+        document.getElementById('vault-breakdown').innerHTML = `
+            <div class="stat-cell"><span class="num">${bank.library.length}</span><span class="lbl">Library</span></div>
+            <div class="stat-cell"><span class="num">${bank.principles.length}</span><span class="lbl">Philosophies</span></div>
+            <div class="stat-cell"><span class="num">${bank.decisions.length}</span><span class="lbl">Decisions</span></div>
+            <div class="stat-cell"><span class="num">${bank.habits.length}</span><span class="lbl">Habits</span></div>
+        `;
+
+        const wp = getWeekProgress();
+        document.getElementById('week-progress-label').textContent = `${wp.pct}% complete`;
+        document.getElementById('week-progress-bar').style.width = `${wp.pct}%`;
+        document.getElementById('week-progress-detail').textContent =
+            wp.total ? `${wp.checked} of ${wp.total} checkboxes this week` : 'Install habits to track progress';
+
+        const todayIdx = getTodayDayIndex();
+        const dayLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+        const activeHabits = bank.habits.filter(h => !h.archived);
+        const dashToday = document.getElementById('dash-today-habits');
+        dashToday.innerHTML = activeHabits.length
+            ? activeHabits.map((h, hIdx) => {
+                const realIdx = bank.habits.indexOf(h);
+                const days = getHabitDays(h);
+                const checked = days[todayIdx];
+                return `<li>
+                    <span>${escapeHtml(h.name)} <small style="opacity:0.6">(${dayLabels[todayIdx]})</small></span>
+                    <input type="checkbox" ${checked ? 'checked' : ''} onchange="toggleHabit(${realIdx}, ${todayIdx})">
+                </li>`;
+            }).join('')
+            : '<li style="color:#888">No habits installed.</li>';
+
+        const dashAct = document.getElementById('dash-activity');
+        dashAct.innerHTML = bank.meta.activity.length
+            ? bank.meta.activity.map(a => `<li><span>${escapeHtml(a.label)} <small>(${escapeHtml(a.action)})</small></span><span class="act-time">${formatActivityTime(a.at)}</span></li>`).join('')
+            : '<li style="color:#888">Activity will appear as you use GrowthBank.</li>';
+        renderReadingGoal();
+        renderReflect();
+    }
+
+    function renderHabits() {
+        const weekLabel = document.getElementById('current-week-label');
+        if (weekLabel) weekLabel.textContent = getISOWeekKey();
+        const todayIdx = getTodayDayIndex();
+        const showArch = bank.settings.showArchivedHabits;
+        const chk = document.getElementById('showArchivedHabits');
+        if (chk) chk.checked = !!showArch;
+        const list = bank.habits.map((h, i) => ({ h, i })).filter(x => showArch || !x.h.archived);
+        document.getElementById('habit-grid').innerHTML = list.map(({ h, i: hIdx }) => {
+            const days = getHabitDays(h);
+            const streak = getHabitStreak(h);
+            const checked = getHabitCheckedCount(h);
+            const target = h.weeklyTarget || 7;
+            const goalPct = Math.min(100, Math.round((checked / target) * 100));
+            return `<tr class="${h.archived ? 'archived-row' : ''}">
+                <td class="habit-name">${escapeHtml(h.name)}${streak > 1 ? ` <span class="streak-fire">${streak}w</span>` : ''}<br><small>${checked}/${target} · ${goalPct}%</small></td>
+                ${days.map((d, dIdx) => {
+                    const cls = dIdx === todayIdx ? 'today-col-highlight' : '';
+                    return `<td class="${cls}"><input type="checkbox" ${d ? 'checked' : ''} onchange="toggleHabit(${hIdx}, ${dIdx})"></td>`;
+                }).join('')}
+                <td>${streak > 0 ? `<span class="streak-fire">${streak}</span>` : '—'}</td>
+                <td>${!h.archived ? `<i class="fa fa-archive delete-icon" onclick="archiveHabit(${hIdx})" title="Archive"></i> ` : ''}<i class="fa fa-trash-alt delete-icon" onclick="remove('habits', ${hIdx})"></i></td>
+            </tr>`;
+        }).join('') || '<tr><td colspan="10" style="padding:20px;color:#999">No habits installed.</td></tr>';
+    }
+
+    function renderLibrary() {
+        const qEl = document.getElementById('libFilterSearch');
+        const q = (qEl ? qEl.value : '').toLowerCase();
+        const st = document.getElementById('libFilterStatus') ? document.getElementById('libFilterStatus').value : '';
+        const sort = document.getElementById('libFilterSort') ? document.getElementById('libFilterSort').value : 'newest';
+        let items = bank.library.map((b, i) => ({ b, i }));
+        if (q) items = items.filter(x => (x.b.title + x.b.author).toLowerCase().includes(q));
+        if (st) items = items.filter(x => x.b.status === st);
+        if (sort === 'title') items.sort((a, b) => a.b.title.localeCompare(b.b.title));
+        else if (sort === 'author') items.sort((a, b) => a.b.author.localeCompare(b.b.author));
+        else if (sort === 'rating') items.sort((a, b) => (b.b.rating || 0) - (a.b.rating || 0));
+        else items.reverse();
+        document.getElementById('full-lib-list').innerHTML = items.map(({ b, i }) => {
+            const tags = (b.tags || []).map(t => `<span class="tag-chip">${escapeHtml(t)}</span>`).join('');
+            return `<div class="card wide" style="height:auto;margin-bottom:12px;padding:1.2rem;flex-direction:row;justify-content:space-between;align-items:center">
+                <div><strong>${escapeHtml(b.title)}</strong> <span style="color:#888">by ${escapeHtml(b.author)}</span> ${b.rating ? '· ' + '★'.repeat(b.rating) : ''} ${tags}
+                ${b.notes ? `<div class="item-notes">${escapeHtml(b.notes)}</div>` : ''}</div>
+                <div style="display:flex;align-items:center;gap:15px"><span class="status-tag status-${escapeHtml(b.status)}">${escapeHtml(b.status)}</span>
+                <i class="fa fa-trash-alt delete-icon" onclick="remove('library', ${i})"></i></div></div>`;
+        }).join('') || '<p style="color:#888">No library items.</p>';
+    }
+
+    function renderPrinciples() {
+        const q = (document.getElementById('princFilterSearch') ? document.getElementById('princFilterSearch').value : '').toLowerCase();
+        const cat = document.getElementById('princFilterCategory') ? document.getElementById('princFilterCategory').value : '';
+        let items = bank.principles.map((p, i) => ({ p, i }));
+        if (q) items = items.filter(x => getPrincipleText(x.p).toLowerCase().includes(q));
+        if (cat) items = items.filter(x => (x.p.category || '') === cat);
+        document.getElementById('full-princ-list').innerHTML = items.map(({ p, i }) =>
+            `<div class="card wide" style="height:auto;margin-bottom:12px;padding:1.2rem;flex-direction:row;justify-content:space-between;align-items:center">
+                <p style="margin:0;font-weight:500">
+                    <i class="fa fa-thumbtack pin-icon ${p.pinned ? 'pinned' : ''}" onclick="togglePin('principles', ${i})"></i>
+                    ${p.category ? `<span class="tag-chip">${escapeHtml(p.category)}</span>` : ''}
+                    <i class="fa fa-feather-pointed" style="color:var(--fire-red);margin-right:10px"></i>"${escapeHtml(getPrincipleText(p))}"
+                </p>
+                <i class="fa fa-trash-alt delete-icon" onclick="remove('principles', ${i})"></i>
+            </div>`
+        ).join('');
+    }
+
+    function renderDecisions() {
+        const q = (document.getElementById('decTriggerSearch') ? document.getElementById('decTriggerSearch').value : '').toLowerCase();
+        let items = bank.decisions.map((d, i) => ({ d, i }));
+        if (q) items = items.filter(x => (x.d.if + x.d.then).toLowerCase().includes(q));
+        document.getElementById('full-dec-list').innerHTML = items.map(({ d, i }) => {
+            const pClass = d.priority === 'high' ? 'priority-high' : (d.priority === 'low' ? 'priority-low' : '');
+            const tags = (d.tags || []).map(t => `<span class="tag-chip">${escapeHtml(t)}</span>`).join('');
+            return `<div class="card wide" style="height:auto;margin-bottom:12px;padding:1.2rem">
+                <p style="margin:0" class="${pClass}">
+                    <i class="fa fa-thumbtack pin-icon ${d.pinned ? 'pinned' : ''}" onclick="togglePin('decisions', ${i})"></i>
+                    <strong>IF:</strong> ${escapeHtml(d.if)} | <strong>THEN:</strong> ${escapeHtml(d.then)} ${tags}
+                    <button type="button" class="copy-btn" onclick="copyDecision(${i})">Copy</button>
+                </p>
+                <i class="fa fa-trash-alt delete-icon" onclick="remove('decisions', ${i})" style="position:absolute;right:20px;top:20px"></i>
+            </div>`;
+        }).join('');
+    }
+
+    function renderReadingGoal() {
+        const goal = bank.settings.readingGoalMonthly || 3;
+        const done = getFinishedThisMonth();
+        const pct = goal ? Math.min(100, Math.round((done / goal) * 100)) : 0;
+        const el = document.getElementById('reading-goal-text');
+        const bar = document.getElementById('reading-goal-bar');
+        const inp = document.getElementById('reading-goal-input');
+        if (el) el.textContent = `${done} / ${goal} books finished this month`;
+        if (bar) bar.style.width = pct + '%';
+        if (inp && document.activeElement !== inp) inp.value = goal;
+    }
+
+    function getFinishedThisMonth() {
+        const now = new Date();
+        const m = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+        return bank.library.filter(b => b.status === 'finished' && (b.finishedAt || '').startsWith(m)).length;
+    }
+
+    function setReadingGoal(v) { bank.settings.readingGoalMonthly = Math.max(1, parseInt(v, 10) || 3); persist(); }
+
+    function renderReflect() {
+        const el = document.getElementById('dash-reflect');
+        if (!el) return;
+        const pod = bank.meta.reflectOfDay || { date: '', index: 0 };
+        const today = getTodayKey();
+        if (pod.date !== today) { pod.date = today; pod.index = Math.floor(Math.random() * REFLECT_PROMPTS.length); bank.meta.reflectOfDay = pod; }
+        const princ = getPrincipleOfDayText();
+        el.textContent = princ ? REFLECT_PROMPTS[pod.index] + ' — tied to: "' + princ + '"' : REFLECT_PROMPTS[pod.index];
+    }
+
+    function renderTriggerLookup(q) {
+        const ul = document.getElementById('dash-trigger-results');
+        if (!ul) return;
+        const query = (q || '').toLowerCase().trim();
+        if (!query) { ul.innerHTML = ''; return; }
+        const hits = bank.decisions.filter(d => (d.if || '').toLowerCase().includes(query) || (d.then || '').toLowerCase().includes(query)).slice(0, 5);
+        ul.innerHTML = hits.length ? hits.map(d => '<li><strong>IF:</strong> ' + escapeHtml(d.if) + '<br><strong>THEN:</strong> ' + escapeHtml(d.then) + '</li>').join('') : '<li style="color:#888">No matching frameworks.</li>';
+    }
+
+    function renderJournal() {
+        const el = document.getElementById('full-journal-list');
+        if (!el) return;
+        el.innerHTML = (bank.journal || []).map((j, i) => '<div class="card wide" style="margin-bottom:12px;padding:1.2rem"><small style="opacity:0.6">' + escapeHtml(j.date) + '</small><p style="margin:8px 0 0">' + escapeHtml(j.body) + '</p><i class="fa fa-trash-alt delete-icon" onclick="remove(\'journal\', ' + i + ')"></i></div>').join('') || '<p style="color:#888">No journal entries yet.</p>';
+    }
+
+    function renderGoals() {
+        const el = document.getElementById('full-goals-list');
+        if (!el) return;
+        el.innerHTML = (bank.goals || []).map((g, i) => '<div class="card wide" style="margin-bottom:12px;padding:1.2rem' + (g.done ? ';opacity:0.6' : '') + '"><p class="' + (g.done ? 'goal-done' : '') + '" style="margin:0"><input type="checkbox" ' + (g.done ? 'checked' : '') + ' onchange="toggleGoal(' + i + ')"> <strong>' + escapeHtml(g.title) + '</strong> — ' + escapeHtml(g.description || '') + '</p><i class="fa fa-trash-alt delete-icon" onclick="remove(\'goals\', ' + i + ')"></i></div>').join('') || '<p style="color:#888">No goals yet.</p>';
+    }
+
+    function toggleGoal(i) { bank.goals[i].done = !bank.goals[i].done; persist(); }
+
+    function toggleShowArchived() { bank.settings.showArchivedHabits = document.getElementById('showArchivedHabits').checked; renderHabits(); }
+
+    function archiveHabit(i) { bank.habits[i].archived = true; logActivity('habits', 'archive', bank.habits[i].name); persist(); }
+
+    function getHabitCheckedCount(h) { return getHabitDays(h).filter(Boolean).length; }
+
+    function openSearch() { document.getElementById('search-modal').classList.add('open'); const i = document.getElementById('global-search-input'); if (i) { i.value = ''; i.focus(); } runGlobalSearch(''); }
+
+    function closeSearch() { document.getElementById('search-modal').classList.remove('open'); }
+
+    function runGlobalSearch(q) {
+        const ul = document.getElementById('global-search-results');
+        const query = (q || '').toLowerCase().trim();
+        if (!query) { ul.innerHTML = ''; return; }
+        const results = [];
+        bank.habits.forEach((h, i) => { if ((h.name || '').toLowerCase().includes(query)) results.push({ type: 'Habit', label: h.name, view: 'habits' }); });
+        bank.library.forEach((b, i) => { if ((b.title + b.author).toLowerCase().includes(query)) results.push({ type: 'Library', label: b.title, view: 'library' }); });
+        bank.principles.forEach((p, i) => { if (getPrincipleText(p).toLowerCase().includes(query)) results.push({ type: 'Philosophy', label: getPrincipleText(p).slice(0, 50), view: 'principles' }); });
+        bank.decisions.forEach((d, i) => { if ((d.if + d.then).toLowerCase().includes(query)) results.push({ type: 'Decision', label: d.if.slice(0, 50), view: 'decisions' }); });
+        (bank.journal || []).forEach(j => { if ((j.body || '').toLowerCase().includes(query)) results.push({ type: 'Journal', label: j.body.slice(0, 50), view: 'journal' }); });
+        (bank.todos || []).forEach(t => { if ((t.text || '').toLowerCase().includes(query)) results.push({ type: 'To-Do', label: t.text, view: 'todos' }); });
+        (bank.workouts || []).forEach(w => { if ((w.name + (w.notes || '')).toLowerCase().includes(query)) results.push({ type: 'Workout', label: w.name, view: 'workouts' }); });
+        (bank.reflections || []).forEach(r => { if ((r.body || '').toLowerCase().includes(query)) results.push({ type: 'Reflection', label: r.body.slice(0, 50), view: 'reflection' }); });
+        (bank.gratitude || []).forEach(g => { if ((g.items || []).join(' ').toLowerCase().includes(query)) results.push({ type: 'Gratitude', label: (g.items[0] || '').slice(0, 50), view: 'gratitude' }); });
+        (bank.research.queue || []).forEach(r => { if ((r.topic + (r.notes || '')).toLowerCase().includes(query)) results.push({ type: 'Research', label: r.topic, view: 'research' }); });
+        (bank.calendar.events || []).forEach(e => { if ((e.title + (e.notes || '')).toLowerCase().includes(query)) results.push({ type: 'Calendar', label: e.title, view: 'calendar' }); });
+        ul.innerHTML = results.slice(0, 12).map(r => '<li onclick="closeSearch();switchView(\'' + r.view + '\')"><span class="sr-type">' + r.type + '</span> ' + escapeHtml(r.label) + '</li>').join('') || '<li>No results</li>';
+    }
+
+    function copyDecision(i) { const d = bank.decisions[i]; navigator.clipboard.writeText('IF: ' + d.if + '\nTHEN: ' + d.then); }
+
+    function validateImport(data) { return data && typeof data === 'object' && Array.isArray(data.library) && Array.isArray(data.habits); }
+
+    async function exportEncrypted() {
+        const pw = prompt('Password for encrypted backup (min 4 chars):');
+        if (!pw || pw.length < 4) return;
+        const enc = await encryptBackup(JSON.stringify(bank), pw);
+        const a = document.createElement('a');
+        a.href = 'data:application/json;charset=utf-8,' + encodeURIComponent(JSON.stringify({ encrypted: true, payload: enc }));
+        a.download = 'growth_os_encrypted.json';
+        a.click();
+    }
+
+    async function encryptBackup(text, password) {
+        const enc = new TextEncoder();
+        const salt = crypto.getRandomValues(new Uint8Array(16));
+        const iv = crypto.getRandomValues(new Uint8Array(12));
+        const keyMaterial = await crypto.subtle.importKey('raw', enc.encode(password), 'PBKDF2', false, ['deriveKey']);
+        const key = await crypto.subtle.deriveKey({ name: 'PBKDF2', salt, iterations: 100000, hash: 'SHA-256' }, keyMaterial, { name: 'AES-GCM', length: 256 }, false, ['encrypt']);
+        const cipher = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, enc.encode(text));
+        return { salt: btoa(String.fromCharCode(...salt)), iv: btoa(String.fromCharCode(...iv)), data: btoa(String.fromCharCode(...new Uint8Array(cipher))) };
+    }
+
+    async function decryptBackup(payload, password) {
+        const dec = new TextDecoder();
+        const salt = Uint8Array.from(atob(payload.salt), c => c.charCodeAt(0));
+        const iv = Uint8Array.from(atob(payload.iv), c => c.charCodeAt(0));
+        const data = Uint8Array.from(atob(payload.data), c => c.charCodeAt(0));
+        const keyMaterial = await crypto.subtle.importKey('raw', new TextEncoder().encode(password), 'PBKDF2', false, ['deriveKey']);
+        const key = await crypto.subtle.deriveKey({ name: 'PBKDF2', salt, iterations: 100000, hash: 'SHA-256' }, keyMaterial, { name: 'AES-GCM', length: 256 }, false, ['decrypt']);
+        const plain = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, data);
+        return dec.decode(plain);
+    }
+
+    function updateDateTimeDisplays() {
+        const now = new Date();
+        const time = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        const day = now.toLocaleDateString([], { weekday: 'long' });
+        const dateNum = now.getDate();
+        const month = now.toLocaleDateString([], { month: 'long' });
+        const year = now.getFullYear();
+        const map = { 'dash-time': time, 'dash-day': day, 'dash-date': String(dateNum), 'dash-month': month, 'dash-year': String(year), 'sidebar-time': time.slice(0, 5), 'sidebar-date': now.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' }) };
+        Object.keys(map).forEach(id => { const el = document.getElementById(id); if (el) el.textContent = map[id]; });
+    }
+
+    function getReflectionPrompt() {
+        const el = document.getElementById('reflection-prompt');
+        if (el && el.dataset.prompt) return el.dataset.prompt;
+        return REFLECTION_PROMPTS[reflectionPromptIndex % REFLECTION_PROMPTS.length];
+    }
+
+    function newReflectionPrompt() {
+        reflectionPromptIndex = Math.floor(Math.random() * REFLECTION_PROMPTS.length);
+        renderReflection();
+    }
+
+    function saveCalendarSettings() {
+        const ws = document.getElementById('calWeekStart');
+        const pn = document.getElementById('calPlanningNote');
+        if (ws) bank.calendar.settings.weekStartsOn = parseInt(ws.value, 10) || 1;
+        if (pn) bank.calendar.settings.planningNote = pn.value.trim();
+        persist();
+    }
+
+    function shiftCalendarMonth(delta) {
+        calendarViewMonth = new Date(calendarViewMonth.getFullYear(), calendarViewMonth.getMonth() + delta, 1);
+        renderCalendar();
+    }
+
+    function goCalendarToday() {
+        calendarViewMonth = new Date();
+        calendarSelectedDate = getTodayKey();
+        renderCalendar();
+    }
+
+    function selectCalendarDay(dateKey) {
+        calendarSelectedDate = dateKey;
+        renderCalendar();
+    }
+
+    function renderCalendar() {
+        const grid = document.getElementById('calendar-grid');
+        if (!grid) return;
+        const y = calendarViewMonth.getFullYear();
+        const m = calendarViewMonth.getMonth();
+        const label = document.getElementById('cal-month-label');
+        if (label) label.textContent = calendarViewMonth.toLocaleDateString([], { month: 'long', year: 'numeric' });
+        const ws = document.getElementById('calWeekStart');
+        const pn = document.getElementById('calPlanningNote');
+        const cd = document.getElementById('calEventDate');
+        if (ws) ws.value = String(bank.calendar.settings.weekStartsOn ?? 1);
+        if (pn && document.activeElement !== pn) pn.value = bank.calendar.settings.planningNote || '';
+        if (cd && !cd.value) cd.value = getTodayKey();
+        const weekStart = parseInt(bank.calendar.settings.weekStartsOn, 10) || 0;
+        const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+        const heads = [];
+        for (let i = 0; i < 7; i++) heads.push(dayNames[(weekStart + i) % 7]);
+        const first = new Date(y, m, 1);
+        const startPad = (first.getDay() - weekStart + 7) % 7;
+        const daysInMonth = new Date(y, m + 1, 0).getDate();
+        const today = getTodayKey();
+        let html = heads.map(h => `<div class="cal-head">${escapeHtml(h)}</div>`).join('');
+        for (let i = 0; i < startPad; i++) html += '<div class="calendar-day other-month"></div>';
+        for (let d = 1; d <= daysInMonth; d++) {
+            const dateKey = `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+            const evts = bank.calendar.events.filter(e => e.date === dateKey);
+            const cls = ['calendar-day', dateKey === today ? 'today' : '', dateKey === calendarSelectedDate ? 'selected' : ''].filter(Boolean).join(' ');
+            html += `<div class="${cls}" onclick="selectCalendarDay('${dateKey}')"><span class="day-num">${d}</span>${evts.length ? '<br>' + evts.map(() => '<span class="cal-dot"></span>').join('') : ''}</div>`;
+        }
+        grid.innerHTML = html;
+        const detail = document.getElementById('cal-day-detail');
+        if (!detail) return;
+        const dayEvents = bank.calendar.events.filter(e => e.date === calendarSelectedDate);
+        if (!dayEvents.length) { detail.style.display = 'none'; return; }
+        detail.style.display = 'block';
+        detail.innerHTML = `<h3 style="margin:0 0 12px">${escapeHtml(calendarSelectedDate)}</h3>` +
+            (bank.calendar.settings.planningNote ? `<p style="opacity:0.8;font-size:0.85rem"><strong>Planning:</strong> ${escapeHtml(bank.calendar.settings.planningNote)}</p>` : '') +
+            dayEvents.map((e, i) => {
+                const idx = bank.calendar.events.indexOf(e);
+                return `<div class="card wide" style="margin-bottom:10px;padding:1rem"><strong>${escapeHtml(e.title)}</strong>${e.notes ? `<p style="margin:6px 0 0">${escapeHtml(e.notes)}</p>` : ''}<i class="fa fa-trash-alt delete-icon" onclick="remove('calendar', ${idx})"></i></div>`;
+            }).join('');
+    }
+
+    function renderTodos() {
+        const today = getTodayKey();
+        const label = document.getElementById('todo-date-label');
+        if (label) label.textContent = new Date().toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+        const list = document.getElementById('todo-list');
+        if (!list) return;
+        const items = (bank.todos || []).filter(t => t.date === today);
+        list.innerHTML = items.length ? items.map((t, i) => {
+            const idx = bank.todos.indexOf(t);
+            return `<li class="${t.done ? 'done' : ''}"><input type="checkbox" ${t.done ? 'checked' : ''} onchange="toggleTodo(${idx})"><span>${escapeHtml(t.text)}</span><i class="fa fa-trash-alt delete-icon" onclick="remove('todos', ${idx})"></i></li>`;
+        }).join('') : '<li style="color:#888;list-style:none">No tasks for today.</li>';
+    }
+
+    function toggleTodo(i) { bank.todos[i].done = !bank.todos[i].done; persist(); }
+
+    function formatPomoTime(sec) {
+        const m = Math.floor(sec / 60);
+        const s = sec % 60;
+        return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+    }
+
+    function syncPomodoroInputs() {
+        const w = document.getElementById('pomoWorkMin');
+        const b = document.getElementById('pomoBreakMin');
+        if (w && document.activeElement !== w) w.value = bank.pomodoro.settings.workMin;
+        if (b && document.activeElement !== b) b.value = bank.pomodoro.settings.breakMin;
+    }
+
+    function savePomodoroSettings() {
+        const w = document.getElementById('pomoWorkMin');
+        const b = document.getElementById('pomoBreakMin');
+        bank.pomodoro.settings.workMin = Math.max(1, parseInt(w && w.value, 10) || 25);
+        bank.pomodoro.settings.breakMin = Math.max(1, parseInt(b && b.value, 10) || 5);
+        if (!pomodoroState.running) {
+            pomodoroState.secondsLeft = (pomodoroState.mode === 'work' ? bank.pomodoro.settings.workMin : bank.pomodoro.settings.breakMin) * 60;
+            updatePomodoroDisplay();
+        }
+        localStorage.setItem('growthOS_master', JSON.stringify(bank));
+    }
+
+    function updatePomodoroDisplay() {
+        const disp = document.getElementById('pomo-display');
+        const mode = document.getElementById('pomo-mode-label');
+        const btn = document.getElementById('pomo-start-btn');
+        if (disp) disp.textContent = formatPomoTime(pomodoroState.secondsLeft);
+        if (mode) mode.textContent = pomodoroState.mode === 'work' ? 'Focus session' : 'Break';
+        if (btn) btn.textContent = pomodoroState.running ? 'Pause' : 'Start';
+    }
+
+    function togglePomodoro() {
+        pomodoroState.running = !pomodoroState.running;
+        if (pomodoroState.running) {
+            pomodoroTimer = setInterval(() => {
+                pomodoroState.secondsLeft--;
+                if (pomodoroState.secondsLeft <= 0) {
+                    if (pomodoroState.mode === 'work') {
+                        const active = bank.pomodoro.tasks.find(t => !t.done);
+                        if (active) active.pomodoros = (active.pomodoros || 0) + 1;
+                        pomodoroState.mode = 'break';
+                        pomodoroState.secondsLeft = bank.pomodoro.settings.breakMin * 60;
+                    } else {
+                        pomodoroState.mode = 'work';
+                        pomodoroState.secondsLeft = bank.pomodoro.settings.workMin * 60;
+                    }
+                    localStorage.setItem('growthOS_master', JSON.stringify(bank));
+                    renderPomodoro();
+                }
+                updatePomodoroDisplay();
+            }, 1000);
+        } else if (pomodoroTimer) {
+            clearInterval(pomodoroTimer);
+            pomodoroTimer = null;
+        }
+        updatePomodoroDisplay();
+    }
+
+    function resetPomodoro() {
+        if (pomodoroTimer) clearInterval(pomodoroTimer);
+        pomodoroTimer = null;
+        pomodoroState.running = false;
+        pomodoroState.mode = 'work';
+        pomodoroState.secondsLeft = bank.pomodoro.settings.workMin * 60;
+        updatePomodoroDisplay();
+    }
+
+    function skipPomodoro() {
+        pomodoroState.secondsLeft = 0;
+        if (pomodoroState.mode === 'work') {
+            pomodoroState.mode = 'break';
+            pomodoroState.secondsLeft = bank.pomodoro.settings.breakMin * 60;
+        } else {
+            pomodoroState.mode = 'work';
+            pomodoroState.secondsLeft = bank.pomodoro.settings.workMin * 60;
+        }
+        updatePomodoroDisplay();
+    }
+
+    function renderPomodoro() {
+        syncPomodoroInputs();
+        updatePomodoroDisplay();
+        const list = document.getElementById('pomo-task-list');
+        if (!list) return;
+        list.innerHTML = (bank.pomodoro.tasks || []).map((t, i) =>
+            `<li class="${t.done ? 'done' : ''}"><input type="checkbox" ${t.done ? 'checked' : ''} onchange="bank.pomodoro.tasks[${i}].done=!bank.pomodoro.tasks[${i}].done;persist()"><span>${escapeHtml(t.text)}</span><small style="opacity:0.6">${t.pomodoros || 0} pomos</small><i class="fa fa-trash-alt delete-icon" onclick="remove('pomodoro', ${i})"></i></li>`
+        ).join('') || '<li style="color:#888;list-style:none">Add a focus task.</li>';
+    }
+
+    function pickRandomResearch() {
+        const t = RESEARCH_TOPICS[Math.floor(Math.random() * RESEARCH_TOPICS.length)];
+        const top = document.getElementById('research-random-topic');
+        const info = document.getElementById('research-random-info');
+        if (top) top.textContent = t.topic;
+        if (info) info.textContent = t.info;
+    }
+
+    function renderResearch() {
+        const el = document.getElementById('research-queue-list');
+        if (!el) return;
+        const top = document.getElementById('research-random-topic');
+        if (top && top.textContent === 'Click to discover') pickRandomResearch();
+        el.innerHTML = (bank.research.queue || []).map((r, i) =>
+            `<div class="card wide research-card" style="padding:1.2rem;margin-bottom:12px"><p style="margin:0" class="${r.done ? 'goal-done' : ''}"><input type="checkbox" ${r.done ? 'checked' : ''} onchange="bank.research.queue[${i}].done=!bank.research.queue[${i}].done;persist()"> <strong>${escapeHtml(r.topic)}</strong>${r.notes ? `<br><small>${escapeHtml(r.notes)}</small>` : ''}</p><i class="fa fa-trash-alt delete-icon" onclick="remove('research', ${i})"></i></div>`
+        ).join('') || '<p style="color:#888">Research queue is empty.</p>';
+    }
+
+    function renderWorkouts() {
+        const el = document.getElementById('workout-list');
+        if (!el) return;
+        el.innerHTML = (bank.workouts || []).map((w, i) =>
+            `<div class="card wide" style="margin-bottom:12px;padding:1.2rem"><strong>${escapeHtml(w.name)}</strong> <span class="tag-chip">${escapeHtml(w.type)}</span> ${w.duration ? w.duration + ' min' : ''}<br><small>${escapeHtml(w.date)}</small>${w.notes ? `<p style="margin:8px 0 0">${escapeHtml(w.notes)}</p>` : ''}<i class="fa fa-trash-alt delete-icon" onclick="remove('workouts', ${i})"></i></div>`
+        ).join('') || '<p style="color:#888">No workouts logged.</p>';
+    }
+
+    function renderReflection() {
+        const dl = document.getElementById('reflection-date-label');
+        const pr = document.getElementById('reflection-prompt');
+        const list = document.getElementById('reflection-list');
+        if (dl) dl.textContent = new Date().toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+        const prompt = REFLECTION_PROMPTS[reflectionPromptIndex % REFLECTION_PROMPTS.length];
+        if (pr) { pr.textContent = prompt; pr.dataset.prompt = prompt; }
+        if (!list) return;
+        list.innerHTML = (bank.reflections || []).map((r, i) =>
+            `<div class="card wide" style="margin-bottom:12px;padding:1.2rem"><small style="opacity:0.6">${escapeHtml(r.date)}</small><p style="font-style:italic;opacity:0.8;margin:8px 0">${escapeHtml(r.prompt || '')}</p><p style="margin:0">${escapeHtml(r.body)}</p><i class="fa fa-trash-alt delete-icon" onclick="remove('reflections', ${i})"></i></div>`
+        ).join('') || '<p style="color:#888">No reflections yet.</p>';
+    }
+
+    function renderGratitude() {
+        const dl = document.getElementById('gratitude-date-label');
+        const list = document.getElementById('gratitude-list');
+        if (dl) dl.textContent = new Date().toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+        if (!list) return;
+        list.innerHTML = (bank.gratitude || []).map((g, i) =>
+            `<div class="card wide" style="margin-bottom:12px;padding:1.2rem"><small style="opacity:0.6">${escapeHtml(g.date)}</small><ul style="margin:8px 0 0;padding-left:20px">${(g.items || []).map(it => `<li>${escapeHtml(it)}</li>`).join('')}</ul><i class="fa fa-trash-alt delete-icon" onclick="remove('gratitude', ${i})"></i></div>`
+        ).join('') || '<p style="color:#888">No gratitude entries yet.</p>';
+    }
+
+    function render() {
+        renderDashboard(); renderHabits(); renderLibrary(); renderPrinciples(); renderDecisions();
+        renderJournal(); renderGoals(); renderCalendar(); renderTodos(); renderPomodoro();
+        renderResearch(); renderWorkouts(); renderReflection(); renderGratitude();
+    }
+
+    function switchView(id) {
+        document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+        document.querySelectorAll('nav li').forEach(l => l.classList.remove('active'));
+        const navId = 'nav-' + id;
+        if (document.getElementById(navId)) document.getElementById(navId).classList.add('active');
+    }
+
+    document.addEventListener('keydown', e => {
+        if ((e.ctrlKey || e.metaKey) && e.key === 'k') { e.preventDefault(); openSearch(); }
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+        if (e.key === 'd') toggleTheme();
+        const views = ['home', 'calendar', 'todos', 'pomodoro', 'habits', 'library', 'research', 'workouts', 'principles'];
+        const n = parseInt(e.key, 10);
+        if (n >= 1 && n <= 9) switchView(views[n - 1]);
+    });
+
+    if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
+    pomodoroState.secondsLeft = (bank.pomodoro.settings.workMin || 25) * 60;
+    setInterval(updateDateTimeDisplays, 1000);
+    render();
+</script>
+
+</body>
+</html>
